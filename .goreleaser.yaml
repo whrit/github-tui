@@ -35,6 +35,29 @@ checksum:
   name_template: checksums.txt
   algorithm: sha256
 
+brews:
+  - name: ght
+    repository:
+      owner: whrit
+      name: homebrew-tap
+      # GoReleaser pushes the formula here on each release.
+      # The HOMEBREW_TAP_GITHUB_TOKEN env var must be set in your
+      # GitHub Actions release workflow with a PAT that has write
+      # access to whrit/homebrew-tap.
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "chore(brew): update {{ .ProjectName }} to {{ .Tag }}"
+    homepage: "https://github.com/whrit/github-tui"
+    description: "Terminal UI client for GitHub — issues, comments, and Actions workflows."
+    license: MIT
+    skip_upload: auto
+    install: |
+      bin.install "ght"
+    test: |
+      system "#{bin}/ght", "--help"
+
 changelog:
   sort: asc
   filters:

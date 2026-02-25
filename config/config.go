@@ -32,7 +32,12 @@ func Init() {
 		log.Fatal(err)
 	}
 
-	logFile := filepath.Join(configDir, "ght", "debug.log")
+	ghtDir := filepath.Join(configDir, "ght")
+	if err := os.MkdirAll(ghtDir, 0o700); err != nil {
+		log.Fatal(err)
+	}
+
+	logFile := filepath.Join(ghtDir, "debug.log")
 	output, err := os.Create(logFile)
 	if err != nil {
 		log.Fatal(err)
@@ -40,7 +45,7 @@ func Init() {
 
 	log.SetOutput(io.MultiWriter(output, os.Stderr))
 
-	configFile := filepath.Join(configDir, "ght", "config.yaml")
+	configFile := filepath.Join(ghtDir, "config.yaml")
 
 	b, err := os.ReadFile(configFile)
 	if err != nil {

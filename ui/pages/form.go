@@ -142,7 +142,7 @@ func (m CreateIssueFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case IssueCreatedMsg:
 		m.done = true
-		return m, func() tea.Msg { return IssueCreatedMsg{} }
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.Type {

@@ -116,6 +116,10 @@ type IssuesModel struct {
 	commentsTable  table.Model
 	commentPreview viewport.Model
 	spinner        spinner.Model
+
+	// Cached glamour renderer — recreated only when preview width changes.
+	mdRenderer *glamour.TermRenderer
+	mdWidth    int
 }
 
 // NewIssuesModel constructs an IssuesModel with themed sub-components and a
@@ -572,11 +576,7 @@ func (m *IssuesModel) updateDetailsAndPreview(ix int) {
 	m.detailsView.SetContent(sb.String())
 
 	// Render issue body as markdown for the preview pane.
-	rendered, err := renderMarkdown(issue.Body, m.issuePreview.Width)
-	if err != nil {
-		rendered = issue.Body
-	}
-	m.issuePreview.SetContent(rendered)
+	m.issuePreview.SetContent(m.renderMarkdown(issue.Body, m.issuePreview.Width))
 
 	// Rebuild the comments table for the selected issue.
 	m.rebuildCommentsTable(issue)
@@ -634,27 +634,13 @@ func (m *IssuesModel) updateCommentPreview(ix int) {
 	}
 	comment := issue.Comments[ix]
 
-	// Get body from the comment's fields — domain.Comment stores body in the
-	// struct, not in Fields().  We need to type-assert.
-	type bodyProvider interface{ Body() string }
-
-	// domain.Comment is a concrete struct, not an interface, so cast directly.
-	// Fields()[0] = Author, Fields()[1] = UpdatedAt — body is not in Fields.
-	// We use Key() as a fall-through if a body accessor isn't available.
+	// domain.Comment stores body in the struct, not in Fields() — type-assert.
 	body := ""
-	// The domain.Comment struct is embedded via domain.Item interface.
-	// We need to get the body — use the underlying type if possible.
-	// Since comments are []domain.Item and the concrete type is *domain.Comment,
-	// we can type-assert.
 	if dc, ok := comment.(*domain.Comment); ok {
 		body = dc.Body
 	}
 
-	rendered, err := renderMarkdown(body, m.commentPreview.Width)
-	if err != nil {
-		rendered = body
-	}
-	m.commentPreview.SetContent(rendered)
+	m.commentPreview.SetContent(m.renderMarkdown(body, m.commentPreview.Width))
 }
 
 // ---------------------------------------------------------------------------
@@ -755,24 +741,39 @@ func (m *IssuesModel) commentsTableWidth() int {
 // Markdown rendering
 // ---------------------------------------------------------------------------
 
-// renderMarkdown renders a markdown string using glamour with the dark GitHub
-// style and word-wrapping at the specified width.
-func renderMarkdown(content string, width int) (string, error) {
+// markdownRenderer returns a cached glamour TermRenderer for the given width.
+// The renderer is recreated only when the width changes, avoiding expensive
+// allocations on every cursor movement.
+func (m *IssuesModel) markdownRenderer(width int) *glamour.TermRenderer {
 	if width <= 0 {
 		width = 80
+	}
+	if m.mdRenderer != nil && m.mdWidth == width {
+		return m.mdRenderer
 	}
 	r, err := glamour.NewTermRenderer(
 		glamour.WithStandardStyle("dark"),
 		glamour.WithWordWrap(width),
 	)
 	if err != nil {
-		return content, err
+		return nil
+	}
+	m.mdRenderer = r
+	m.mdWidth = width
+	return r
+}
+
+// renderMarkdown renders markdown content using the cached renderer.
+func (m *IssuesModel) renderMarkdown(content string, width int) string {
+	r := m.markdownRenderer(width)
+	if r == nil {
+		return content
 	}
 	rendered, err := r.Render(content)
 	if err != nil {
-		return content, err
+		return content
 	}
-	return rendered, nil
+	return rendered
 }
 
 // ---------------------------------------------------------------------------
@@ -913,10 +914,3 @@ func panelStyle(focused bool, width int) lipgloss.Style {
 	return base
 }
 
-// max returns the larger of two ints.
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

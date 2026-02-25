@@ -1,6 +1,16 @@
 package domain
 
-import "github.com/gdamore/tcell/v2"
+// ColorRole is a semantic color identifier resolved by the UI theme layer.
+type ColorRole string
+
+const (
+	ColorRoleDefault ColorRole = "default"
+	ColorRoleMuted   ColorRole = "muted"
+	ColorRoleAccent  ColorRole = "accent"
+	ColorRoleSuccess ColorRole = "success"
+	ColorRoleDanger  ColorRole = "danger"
+	ColorRoleWarning ColorRole = "warning"
+)
 
 type Item interface {
 	Key() string
@@ -8,6 +18,6 @@ type Item interface {
 }
 
 type Field struct {
-	Text  string
-	Color tcell.Color
+	Text      string
+	ColorRole ColorRole
 }

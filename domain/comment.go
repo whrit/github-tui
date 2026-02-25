@@ -1,7 +1,5 @@
 package domain
 
-import "github.com/gdamore/tcell/v2"
-
 type Comment struct {
 	ID        string
 	Author    string
@@ -16,8 +14,8 @@ func (c *Comment) Key() string {
 
 func (c *Comment) Fields() []Field {
 	f := []Field{
-		{Text: c.Author, Color: tcell.ColorYellow},
-		{Text: c.UpdatedAt, Color: tcell.ColorWhite},
+		{Text: c.Author, ColorRole: ColorRoleWarning},
+		{Text: c.UpdatedAt, ColorRole: ColorRoleMuted},
 	}
 
 	return f

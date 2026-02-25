@@ -1,10 +1,6 @@
 package domain
 
-import (
-	"fmt"
-
-	"github.com/gdamore/tcell/v2"
-)
+import "fmt"
 
 type Issue struct {
 	ID        string
@@ -28,17 +24,17 @@ func (i *Issue) Key() string {
 }
 
 func (i *Issue) Fields() []Field {
-	stateColor := tcell.ColorGreen
+	stateRole := ColorRoleSuccess
 	if i.State == "CLOSED" {
-		stateColor = tcell.ColorRed
+		stateRole = ColorRoleDanger
 	}
 
 	f := []Field{
-		{Text: fmt.Sprintf("%s/%s", i.RepoOwner, i.Repo), Color: tcell.ColorLightSalmon},
-		{Text: i.Number, Color: tcell.ColorBlue},
-		{Text: i.State, Color: stateColor},
-		{Text: i.Author, Color: tcell.ColorYellow},
-		{Text: i.Title, Color: tcell.ColorWhite},
+		{Text: fmt.Sprintf("%s/%s", i.RepoOwner, i.Repo), ColorRole: ColorRoleMuted},
+		{Text: i.Number, ColorRole: ColorRoleAccent},
+		{Text: i.State, ColorRole: stateRole},
+		{Text: i.Author, ColorRole: ColorRoleWarning},
+		{Text: i.Title, ColorRole: ColorRoleDefault},
 	}
 
 	return f

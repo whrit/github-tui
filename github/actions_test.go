@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
 	gogithub "github.com/google/go-github/v68/github"
 
 	"github.com/skanehira/ght/domain"
@@ -310,7 +309,7 @@ func TestWorkflowRunFields(t *testing.T) {
 	tests := []struct {
 		name       string
 		run        domain.WorkflowRun
-		wantColor  tcell.Color
+		wantRole   domain.ColorRole
 		wantStatus string
 	}{
 		{
@@ -319,7 +318,7 @@ func TestWorkflowRunFields(t *testing.T) {
 				ID: 1, Status: "completed", Conclusion: "success",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "5m 0s",
 			},
-			wantColor:  tcell.ColorGreen,
+			wantRole:   domain.ColorRoleSuccess,
 			wantStatus: "success",
 		},
 		{
@@ -328,43 +327,43 @@ func TestWorkflowRunFields(t *testing.T) {
 				ID: 2, Status: "completed", Conclusion: "failure",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "3m 15s",
 			},
-			wantColor:  tcell.ColorRed,
+			wantRole:   domain.ColorRoleDanger,
 			wantStatus: "failure",
 		},
 		{
-			name: "completed cancelled is gray",
+			name: "completed cancelled is muted",
 			run: domain.WorkflowRun{
 				ID: 3, Status: "completed", Conclusion: "cancelled",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "1m 0s",
 			},
-			wantColor:  tcell.ColorGray,
+			wantRole:   domain.ColorRoleMuted,
 			wantStatus: "cancelled",
 		},
 		{
-			name: "in_progress is yellow",
+			name: "in_progress is warning",
 			run: domain.WorkflowRun{
 				ID: 4, Status: "in_progress", Conclusion: "",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "2m 30s",
 			},
-			wantColor:  tcell.ColorYellow,
+			wantRole:   domain.ColorRoleWarning,
 			wantStatus: "in_progress",
 		},
 		{
-			name: "queued is gray",
+			name: "queued is muted",
 			run: domain.WorkflowRun{
 				ID: 5, Status: "queued", Conclusion: "",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "",
 			},
-			wantColor:  tcell.ColorGray,
+			wantRole:   domain.ColorRoleMuted,
 			wantStatus: "queued",
 		},
 		{
-			name: "waiting is gray",
+			name: "waiting is muted",
 			run: domain.WorkflowRun{
 				ID: 6, Status: "waiting", Conclusion: "",
 				Name: "CI", HeadBranch: "main", Event: "push", Duration: "",
 			},
-			wantColor:  tcell.ColorGray,
+			wantRole:   domain.ColorRoleMuted,
 			wantStatus: "waiting",
 		},
 	}
@@ -379,8 +378,8 @@ func TestWorkflowRunFields(t *testing.T) {
 
 			// First field is status
 			statusField := fields[0]
-			if statusField.Color != tt.wantColor {
-				t.Errorf("status color = %v, want %v", statusField.Color, tt.wantColor)
+			if statusField.ColorRole != tt.wantRole {
+				t.Errorf("status color role = %v, want %v", statusField.ColorRole, tt.wantRole)
 			}
 			if statusField.Text != tt.wantStatus {
 				t.Errorf("status text = %q, want %q", statusField.Text, tt.wantStatus)
@@ -393,34 +392,34 @@ func TestWorkflowJobFields(t *testing.T) {
 	tests := []struct {
 		name       string
 		job        domain.WorkflowJob
-		wantColor  tcell.Color
+		wantRole   domain.ColorRole
 		wantStatus string
 	}{
 		{
-			name: "completed success is green",
+			name: "completed success is success role",
 			job: domain.WorkflowJob{
 				ID: 1, Status: "completed", Conclusion: "success",
 				Name: "build", Duration: "2m 0s",
 			},
-			wantColor:  tcell.ColorGreen,
+			wantRole:   domain.ColorRoleSuccess,
 			wantStatus: "success",
 		},
 		{
-			name: "completed failure is red",
+			name: "completed failure is danger role",
 			job: domain.WorkflowJob{
 				ID: 2, Status: "completed", Conclusion: "failure",
 				Name: "test", Duration: "1m 30s",
 			},
-			wantColor:  tcell.ColorRed,
+			wantRole:   domain.ColorRoleDanger,
 			wantStatus: "failure",
 		},
 		{
-			name: "in_progress is yellow",
+			name: "in_progress is warning role",
 			job: domain.WorkflowJob{
 				ID: 3, Status: "in_progress", Conclusion: "",
 				Name: "deploy", Duration: "30s",
 			},
-			wantColor:  tcell.ColorYellow,
+			wantRole:   domain.ColorRoleWarning,
 			wantStatus: "in_progress",
 		},
 	}
@@ -435,8 +434,8 @@ func TestWorkflowJobFields(t *testing.T) {
 
 			// First field is status
 			statusField := fields[0]
-			if statusField.Color != tt.wantColor {
-				t.Errorf("status color = %v, want %v", statusField.Color, tt.wantColor)
+			if statusField.ColorRole != tt.wantRole {
+				t.Errorf("status color role = %v, want %v", statusField.ColorRole, tt.wantRole)
 			}
 			if statusField.Text != tt.wantStatus {
 				t.Errorf("status text = %q, want %q", statusField.Text, tt.wantStatus)

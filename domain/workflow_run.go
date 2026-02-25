@@ -1,10 +1,6 @@
 package domain
 
-import (
-	"fmt"
-
-	"github.com/gdamore/tcell/v2"
-)
+import "fmt"
 
 // WorkflowRun represents a GitHub Actions workflow run.
 type WorkflowRun struct {
@@ -27,35 +23,35 @@ func (w *WorkflowRun) Key() string {
 }
 
 func (w *WorkflowRun) Fields() []Field {
-	statusText, color := statusDisplay(w.Status, w.Conclusion)
+	statusText, role := statusDisplay(w.Status, w.Conclusion)
 
 	return []Field{
-		{Text: statusText, Color: color},
-		{Text: w.Name, Color: tcell.ColorWhite},
-		{Text: w.HeadBranch, Color: tcell.ColorBlue},
-		{Text: w.Event, Color: tcell.ColorYellow},
-		{Text: w.Duration, Color: tcell.ColorWhite},
+		{Text: statusText, ColorRole: role},
+		{Text: w.Name, ColorRole: ColorRoleDefault},
+		{Text: w.HeadBranch, ColorRole: ColorRoleAccent},
+		{Text: w.Event, ColorRole: ColorRoleWarning},
+		{Text: w.Duration, ColorRole: ColorRoleDefault},
 	}
 }
 
-// statusDisplay returns the display text and color for a workflow status/conclusion pair.
+// statusDisplay returns the display text and ColorRole for a workflow status/conclusion pair.
 // For completed runs, the conclusion text is displayed; for non-completed runs, the status text.
-func statusDisplay(status, conclusion string) (string, tcell.Color) {
+func statusDisplay(status, conclusion string) (string, ColorRole) {
 	switch status {
 	case "completed":
 		switch conclusion {
 		case "success":
-			return conclusion, tcell.ColorGreen
+			return conclusion, ColorRoleSuccess
 		case "failure":
-			return conclusion, tcell.ColorRed
+			return conclusion, ColorRoleDanger
 		default:
 			// cancelled, skipped, etc.
-			return conclusion, tcell.ColorGray
+			return conclusion, ColorRoleMuted
 		}
 	case "in_progress":
-		return status, tcell.ColorYellow
+		return status, ColorRoleWarning
 	default:
 		// queued, waiting, etc.
-		return status, tcell.ColorGray
+		return status, ColorRoleMuted
 	}
 }

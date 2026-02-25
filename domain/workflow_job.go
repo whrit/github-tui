@@ -1,10 +1,6 @@
 package domain
 
-import (
-	"fmt"
-
-	"github.com/gdamore/tcell/v2"
-)
+import "fmt"
 
 // WorkflowJob represents a GitHub Actions workflow job.
 type WorkflowJob struct {
@@ -22,11 +18,11 @@ func (j *WorkflowJob) Key() string {
 }
 
 func (j *WorkflowJob) Fields() []Field {
-	statusText, color := statusDisplay(j.Status, j.Conclusion)
+	statusText, role := statusDisplay(j.Status, j.Conclusion)
 
 	return []Field{
-		{Text: statusText, Color: color},
-		{Text: j.Name, Color: tcell.ColorWhite},
-		{Text: j.Duration, Color: tcell.ColorWhite},
+		{Text: statusText, ColorRole: role},
+		{Text: j.Name, ColorRole: ColorRoleDefault},
+		{Text: j.Duration, ColorRole: ColorRoleDefault},
 	}
 }

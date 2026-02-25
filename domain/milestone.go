@@ -1,7 +1,5 @@
 package domain
 
-import "github.com/gdamore/tcell/v2"
-
 type Milestone struct {
 	ID          string
 	Title       string
@@ -16,6 +14,6 @@ func (m *Milestone) Key() string {
 
 func (m *Milestone) Fields() []Field {
 	return []Field{
-		{Text: m.Title, Color: tcell.ColorGreen},
+		{Text: m.Title, ColorRole: ColorRoleSuccess},
 	}
 }

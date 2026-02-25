@@ -1,7 +1,5 @@
 package domain
 
-import "github.com/gdamore/tcell/v2"
-
 type Project struct {
 	Name string
 	URL  string
@@ -13,6 +11,6 @@ func (p *Project) Key() string {
 
 func (p *Project) Fields() []Field {
 	return []Field{
-		{Text: p.Name, Color: tcell.ColorLightSalmon},
+		{Text: p.Name, ColorRole: ColorRoleMuted},
 	}
 }

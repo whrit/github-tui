@@ -99,7 +99,7 @@ type ActionsModel struct {
 func NewActionsModel(th theme.Theme) ActionsModel {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
-	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Palette.Accent))
+	sp.Style = th.Accent
 	m := ActionsModel{
 		th:        th,
 		statusBar: components.NewStatusBar(th),

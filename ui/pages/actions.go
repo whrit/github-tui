@@ -85,12 +85,9 @@ type ActionsModel struct {
 
 	currentRunID   int64
 	currentRunName string
-	currentJobID   int64
 
 	runs []domain.Item
 	jobs []domain.Item
-
-	logCancel context.CancelFunc
 
 	runsTable table.Model
 	jobsTable table.Model
@@ -288,9 +285,6 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					case "r":
 						m.loading = true
 						cmds = append(cmds, m.sp.Tick, fetchRuns(m.statusFilter, m.workflowID, m.cursor))
-					case "w":
-						// Fetch workflows and store; selection UI is future work.
-						cmds = append(cmds, fetchWorkflows())
 					}
 				}
 				// Delegate to runsTable for navigation.
@@ -313,7 +307,6 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if ix < len(m.jobs) {
 					job, ok := m.jobs[ix].(*domain.WorkflowJob)
 					if ok {
-						m.currentJobID = job.ID
 						m.loading = true
 						cmds = append(cmds, m.sp.Tick, fetchLog(job.ID))
 					}
@@ -430,7 +423,8 @@ func (m *ActionsModel) recalcLayout() {
 	m.runsTable.SetHeight(contentH)
 	m.jobsTable.SetWidth(m.width)
 	m.jobsTable.SetHeight(contentH)
-	m.logView = viewport.New(m.width, contentH)
+	m.logView.Width = m.width
+	m.logView.Height = contentH
 }
 
 // ---------------------------------------------------------------------------
@@ -444,9 +438,8 @@ func (m ActionsModel) View() string {
 	}
 
 	// Title row
-	titleRight := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(theme.Palette.TextMuted)).
-		Render(fmt.Sprintf("%s/%s", config.GitHub.Owner, config.GitHub.Repo))
+	dividerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Palette.Border))
+	titleRight := m.th.Muted.Render(fmt.Sprintf("%s/%s", config.GitHub.Owner, config.GitHub.Repo))
 	titleLeft := m.th.TitleBar.Render("github-tui")
 	gap := m.width - lipgloss.Width(titleLeft) - lipgloss.Width(titleRight)
 	if gap < 1 {
@@ -455,9 +448,7 @@ func (m ActionsModel) View() string {
 	titleRow := titleLeft + fmt.Sprintf("%*s", gap, "") + titleRight
 
 	tabRow := "  " + m.tabBar.View("actions")
-	divider := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(theme.Palette.Border)).
-		Render(strings.Repeat("─", m.width))
+	divider := dividerStyle.Render(strings.Repeat("─", m.width))
 
 	// Content
 	var content string
@@ -486,7 +477,7 @@ func (m ActionsModel) renderLoading() string {
 	if h < 3 {
 		h = 3
 	}
-	return lipgloss.NewStyle().Width(m.width).Height(h).
+	return m.th.Muted.Width(m.width).Height(h).
 		Render(strings.Repeat("\n", h/2) + fmt.Sprintf("    %s Loading...", m.sp.View()))
 }
 
@@ -503,7 +494,6 @@ func (m ActionsModel) statusHints() ([]components.KeyHint, string) {
 		}
 		hints := []components.KeyHint{
 			{Key: "s", Desc: "status"},
-			{Key: "w", Desc: "workflow"},
 			{Key: "r", Desc: "refresh"},
 			{Key: "Enter", Desc: "jobs"},
 		}
@@ -522,19 +512,3 @@ func (m ActionsModel) statusHints() ([]components.KeyHint, string) {
 	return nil, ""
 }
 
-// ---------------------------------------------------------------------------
-// Workflow fetch (for 'w' key — selection UI deferred)
-// ---------------------------------------------------------------------------
-
-type workflowsLoadedMsg struct {
-	workflows []*gogithub.Workflow
-	err       error
-}
-
-func fetchWorkflows() tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-		wfs, err := github.ListWorkflows(ctx, config.GitHub.Owner, config.GitHub.Repo)
-		return workflowsLoadedMsg{workflows: wfs, err: err}
-	}
-}

@@ -26,8 +26,8 @@ func NewStatusBar(th theme.Theme) StatusBar {
 // View renders the status bar at the given terminal width.
 // Key hints are left-aligned; context string is right-aligned.
 func (sb StatusBar) View(width int, hints []KeyHint, context string) string {
-	keyStyle  := lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Palette.Accent))
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(theme.Palette.TextMuted))
+	keyStyle  := sb.th.Accent
+	descStyle := sb.th.Muted
 
 	parts := make([]string, 0, len(hints))
 	for _, h := range hints {

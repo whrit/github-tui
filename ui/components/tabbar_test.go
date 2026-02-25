@@ -38,3 +38,22 @@ func TestTabBarActiveIndicator(t *testing.T) {
 		}
 	}
 }
+
+func TestTabBarActiveIndicatorPlacement(t *testing.T) {
+	th := theme.Default()
+	tb := components.NewTabBar(th)
+
+	view := tb.View("issues")
+	issuesIdx := strings.Index(view, "Issues")
+	filledIdx := strings.Index(view, "●")
+	if filledIdx < 0 || filledIdx > issuesIdx {
+		t.Error("active indicator must appear before 'Issues' when page is issues")
+	}
+
+	view2 := tb.View("actions")
+	actionsIdx := strings.Index(view2, "Actions")
+	filledIdx2 := strings.Index(view2, "●")
+	if filledIdx2 < 0 || filledIdx2 > actionsIdx {
+		t.Error("active indicator must appear before 'Actions' when page is actions")
+	}
+}

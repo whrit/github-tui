@@ -24,10 +24,11 @@ func (tb TabBar) View(activePage string) string {
 	issuesStyle      := tb.th.TabInactive
 	actionsStyle     := tb.th.TabInactive
 
-	if activePage == "issues" {
+	switch activePage {
+	case "issues":
 		issuesIndicator = activeIndicator
 		issuesStyle     = tb.th.TabActive
-	} else {
+	case "actions":
 		actionsIndicator = activeIndicator
 		actionsStyle     = tb.th.TabActive
 	}

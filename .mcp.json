@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "quikgraph": {
+      "args": [
+        "--stdio",
+        "--preset",
+        "balanced"
+      ],
+      "command": "/Users/beckett/.local/bin/quikgraph-mcp",
+      "description": "Quikgraph semantic code search and analysis",
+      "env": {
+        "RUST_LOG": "off"
+      },
+      "type": "stdio"
+    }
+  }
+}

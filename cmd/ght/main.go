@@ -38,7 +38,7 @@ func main() {
 		log.Println("Note: Fine-grained PAT detected — scope validation skipped. If you encounter permission errors, verify your token has repo, actions, and project read permissions.")
 	}
 
-	if err := ui.New().Start(); err != nil {
+	if err := ui.Start(); err != nil {
 		log.Fatal(err)
 	}
 }

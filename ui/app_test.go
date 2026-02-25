@@ -3,7 +3,6 @@ package ui_test
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/skanehira/ght/ui"
 	"github.com/skanehira/ght/ui/pages"
 )

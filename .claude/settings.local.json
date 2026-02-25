@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(go get:*)",
+      "Bash(go build:*)",
+      "Bash(echo BUILD OK:*)",
+      "Bash(tail:*)",
+      "Bash(go test:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(git rm:*)",
+      "Bash(go mod:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "quikgraph"
+  ]
+}

@@ -19,6 +19,7 @@ import (
 	github "github.com/skanehira/ght/github"
 	"github.com/skanehira/ght/ui/components"
 	"github.com/skanehira/ght/ui/theme"
+	"github.com/skanehira/ght/utils"
 )
 
 // ---------------------------------------------------------------------------
@@ -83,8 +84,9 @@ type ActionsModel struct {
 	cursor       *string
 	hasMore      bool
 
-	currentRunID   int64
-	currentRunName string
+	currentRunID     int64
+	currentRunName   string
+	currentJobHTMLURL string
 
 	runs []domain.Item
 	jobs []domain.Item
@@ -257,10 +259,6 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch m.view {
 		case viewRuns:
 			switch msg.Type {
-			case tea.KeyCtrlI:
-				return m, func() tea.Msg { return SwitchPageMsg{Page: "issues"} }
-			case tea.KeyCtrlC:
-				return m, tea.Quit
 			case tea.KeyEnter:
 				ix := m.runsTable.Cursor()
 				if ix < len(m.runs) {
@@ -276,6 +274,8 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			default:
 				if msg.Type == tea.KeyRunes {
 					switch string(msg.Runes) {
+					case "q":
+						return m, func() tea.Msg { return RequestQuitMsg{} }
 					case "s":
 						m.statusIx = (m.statusIx + 1) % len(statusFilterCycle)
 						m.statusFilter = statusFilterCycle[m.statusIx]
@@ -285,6 +285,14 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					case "r":
 						m.loading = true
 						cmds = append(cmds, m.sp.Tick, fetchRuns(m.statusFilter, m.workflowID, m.cursor))
+					case "o":
+						ix := m.runsTable.Cursor()
+						if ix < len(m.runs) {
+							if run, ok := m.runs[ix].(*domain.WorkflowRun); ok && run.HTMLURL != "" {
+								url := run.HTMLURL
+								return m, func() tea.Msg { _ = utils.Open(url); return nil }
+							}
+						}
 					}
 				}
 				// Delegate to runsTable for navigation.
@@ -298,23 +306,31 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyEscape:
 				m.view = viewRuns
 				m.loading = false
-			case tea.KeyCtrlI:
-				return m, func() tea.Msg { return SwitchPageMsg{Page: "issues"} }
-			case tea.KeyCtrlC:
-				return m, tea.Quit
 			case tea.KeyEnter:
 				ix := m.jobsTable.Cursor()
 				if ix < len(m.jobs) {
 					job, ok := m.jobs[ix].(*domain.WorkflowJob)
 					if ok {
+						m.currentJobHTMLURL = job.HTMLURL
 						m.loading = true
 						cmds = append(cmds, m.sp.Tick, fetchLog(job.ID))
 					}
 				}
 			case tea.KeyRunes:
-				if string(msg.Runes) == "r" {
+				switch string(msg.Runes) {
+				case "q":
+					return m, func() tea.Msg { return RequestQuitMsg{} }
+				case "r":
 					m.loading = true
 					cmds = append(cmds, m.sp.Tick, fetchJobs(m.currentRunID))
+				case "o":
+					ix := m.jobsTable.Cursor()
+					if ix < len(m.jobs) {
+						if job, ok := m.jobs[ix].(*domain.WorkflowJob); ok && job.HTMLURL != "" {
+							url := job.HTMLURL
+							return m, func() tea.Msg { _ = utils.Open(url); return nil }
+						}
+					}
 				}
 				var cmd tea.Cmd
 				m.jobsTable, cmd = m.jobsTable.Update(msg)
@@ -329,8 +345,17 @@ func (m ActionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.Type {
 			case tea.KeyEscape:
 				m.view = viewJobs
-			case tea.KeyCtrlC:
-				return m, tea.Quit
+			case tea.KeyRunes:
+				if string(msg.Runes) == "q" {
+					return m, func() tea.Msg { return RequestQuitMsg{} }
+				}
+				if string(msg.Runes) == "o" && m.currentJobHTMLURL != "" {
+					url := m.currentJobHTMLURL
+					return m, func() tea.Msg { _ = utils.Open(url); return nil }
+				}
+				var cmd tea.Cmd
+				m.logView, cmd = m.logView.Update(msg)
+				cmds = append(cmds, cmd)
 			default:
 				var cmd tea.Cmd
 				m.logView, cmd = m.logView.Update(msg)
@@ -495,6 +520,7 @@ func (m ActionsModel) statusHints() ([]components.KeyHint, string) {
 		hints := []components.KeyHint{
 			{Key: "s", Desc: "status"},
 			{Key: "r", Desc: "refresh"},
+			{Key: "o", Desc: "open"},
 			{Key: "Enter", Desc: "jobs"},
 		}
 		ctx := fmt.Sprintf("Status: %s | Workflow: %s", statusLabel, wfLabel)
@@ -503,11 +529,15 @@ func (m ActionsModel) statusHints() ([]components.KeyHint, string) {
 		hints := []components.KeyHint{
 			{Key: "Esc", Desc: "back"},
 			{Key: "r", Desc: "refresh"},
+			{Key: "o", Desc: "open"},
 			{Key: "Enter", Desc: "log"},
 		}
 		return hints, fmt.Sprintf("Run: %s", m.currentRunName)
 	case viewLog:
-		return []components.KeyHint{{Key: "Esc", Desc: "close"}}, "Log view"
+		return []components.KeyHint{
+		{Key: "Esc", Desc: "close"},
+		{Key: "o", Desc: "open"},
+	}, "Log view"
 	}
 	return nil, ""
 }

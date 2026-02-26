@@ -21,6 +21,7 @@ import (
 	github "github.com/skanehira/ght/github"
 	"github.com/skanehira/ght/ui/components"
 	"github.com/skanehira/ght/ui/theme"
+	"github.com/skanehira/ght/utils"
 )
 
 // ---------------------------------------------------------------------------
@@ -39,7 +40,7 @@ const (
 	focusCommentPreview                     // comment body preview viewport
 )
 
-// focusPanels is an ordered slice used to cycle focus with Ctrl+N / Ctrl+P.
+// focusPanels is an ordered slice used to cycle focus with [ / ].
 var focusPanels = []focusedPanel{
 	focusFilter,
 	focusIssues,
@@ -81,6 +82,10 @@ type CommentsLoadedMsg struct {
 type SwitchPageMsg struct {
 	Page string
 }
+
+// RequestQuitMsg is emitted by a page when the user presses q.
+// AppModel handles the two-press confirmation.
+type RequestQuitMsg struct{}
 
 // ---------------------------------------------------------------------------
 // IssuesModel
@@ -315,17 +320,21 @@ func (m IssuesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+a":
-			return m, func() tea.Msg { return SwitchPageMsg{Page: "actions"} }
+		case "q":
+			// Only quit when not typing in the filter input.
+			if m.focus != focusFilter {
+				return m, func() tea.Msg { return RequestQuitMsg{} }
+			}
+			// Filter is focused — let 'q' type into it.
+			var cmd tea.Cmd
+			m, cmd = m.delegateKey(msg)
+			cmds = append(cmds, cmd)
 
-		case "ctrl+c":
-			return m, tea.Quit
-
-		case "ctrl+n":
+		case "]":
 			m.focusNext()
 			m.syncTableFocus()
 
-		case "ctrl+p":
+		case "[":
 			m.focusPrev()
 			m.syncTableFocus()
 
@@ -340,9 +349,26 @@ func (m IssuesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, fetchIssues(m.query, nil))
 			}
 
+		case "r":
+			// Refresh: re-fetch from the beginning using the current query.
+			m.loading = true
+			m.issues = nil
+			m.cursor = nil
+			m.hasMore = false
+			cmds = append(cmds, m.spinner.Tick, fetchIssues(m.query, nil))
+
 		case "f":
 			if m.focus == focusIssues && m.hasMore && m.cursor != nil {
 				cmds = append(cmds, fetchMoreIssues(m.query, m.cursor))
+			}
+
+		case "o":
+			ix := m.issueTable.Cursor()
+			if ix < len(m.issues) {
+				if issue, ok := m.issues[ix].(*domain.Issue); ok && issue.URL != "" {
+					url := issue.URL
+					return m, func() tea.Msg { _ = utils.Open(url); return nil }
+				}
 			}
 
 		default:
@@ -818,11 +844,12 @@ func (m IssuesModel) View() string {
 
 	// --- Status bar ----------------------------------------------------------
 	hints := []components.KeyHint{
-		{Key: "Ctrl+N", Desc: "next"},
-		{Key: "Ctrl+P", Desc: "prev"},
+		{Key: "[/]", Desc: "panel"},
+		{Key: "r", Desc: "refresh"},
+		{Key: "o", Desc: "open"},
 		{Key: "n", Desc: "new"},
-		{Key: "f", Desc: "fetch"},
-		{Key: "/", Desc: "search"},
+		{Key: "f", Desc: "more"},
+		{Key: "?", Desc: "help"},
 	}
 	statusBarView := m.statusBar.View(titleW, hints, "")
 

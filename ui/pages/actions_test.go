@@ -8,14 +8,17 @@ import (
 	"github.com/skanehira/ght/ui/theme"
 )
 
-// TestActionsModel_TabSwitchToIssues verifies that Ctrl+I emits a command
-// that, when executed, produces a SwitchPageMsg{Page: "issues"}.
-func TestActionsModel_TabSwitchToIssues(t *testing.T) {
+// TestActionsModel_QEmitsRequestQuit verifies that q emits a RequestQuitMsg command.
+func TestActionsModel_QEmitsRequestQuit(t *testing.T) {
 	th := theme.Default()
 	m := pages.NewActionsModel(th)
-	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlI})
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
 	if cmd == nil {
-		t.Error("Ctrl+I should emit SwitchPageMsg")
+		t.Error("q should emit RequestQuitMsg")
+	}
+	result := cmd()
+	if _, ok := result.(pages.RequestQuitMsg); !ok {
+		t.Errorf("expected RequestQuitMsg, got %T", result)
 	}
 }
 
